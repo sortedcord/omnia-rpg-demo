@@ -3,11 +3,13 @@ import { isWalkable } from "./collision";
 import { renderScene } from "./render";
 import { findInteractable } from "./interact";
 import type { Scene } from "./scene";
+import { renderTextBar } from "./ui";
 
 // src/main.ts
 const canvas = document.getElementById("game") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d")!;
 
+let uiText: string | null = null;
 
 const player = {
   x: 10,
@@ -17,6 +19,11 @@ const player = {
 
 window.addEventListener("keydown", (e) => {
   let next = { ...player };
+
+  if (e.key === "Escape") {
+    uiText = null;
+    return;
+  }
 
 
   if (e.key === "ArrowUp") next.y--;
@@ -30,11 +37,11 @@ window.addEventListener("keydown", (e) => {
     if (obj) {
       console.log(`interacting with ${obj.id}`)
       for (const interaction of obj.interactions) {
-        console.log(`[${interaction.type}] ${interaction.description}`);
+        uiText = `[${interaction.type}] ${interaction.description}`;
 
       }
     } else {
-      console.log("Nothing to interact with");
+      uiText = "Nothing to interact with";
     }
 
     return;
@@ -57,6 +64,10 @@ function loop() {
   ctx.fillStyle = "white";
   ctx.fillRect(player.x * 32, player.y * 32, 32, 32);
   requestAnimationFrame(loop);
+
+  if (uiText) {
+    renderTextBar(ctx, uiText);
+  }
 }
 
 let scene: Scene;
