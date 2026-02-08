@@ -5,7 +5,7 @@
         "width": 20,
         "height": 15
     },
-    "description": "A dusty abandoned classroom.",
+    "description": "A dusty abandoned classroom. Sunlight leaks through cracked windows, illuminating old desks frozen in time.",
     "objects": [
         {
             "id": "blackboard",
@@ -22,7 +22,7 @@
             "interactions": [
                 {
                     "type": "inspect",
-                    "description": "Faded chalk writing covers the board."
+                    "description": "Faded chalk writing reads: \"Do not stay after the bell.\""
                 }
             ]
         },
@@ -38,7 +38,73 @@
                 "h": 2
             },
             "blocking": true,
-            "interactions": []
+            "interactions": [
+                {
+                    "type": "inspect",
+                    "description": "Stacks of yellowed papers lie untouched for years."
+                }
+            ]
+        },
+        {
+            "id": "janitor_npc",
+            "type": "npc",
+            "pos": {
+                "x": 2,
+                "y": 11
+            },
+            "size": {
+                "w": 1,
+                "h": 1
+            },
+            "blocking": true,
+            "interactions": [
+                {
+                    "type": "talk",
+                    "description": "The janitor grips his mop tightly. \"Funny thing about empty schools,\" he says. \"They’re never really empty.\""
+                }
+            ]
+        },
+        {
+            "id": "student_ghost_npc",
+            "type": "npc",
+            "pos": {
+                "x": 15,
+                "y": 8
+            },
+            "size": {
+                "w": 1,
+                "h": 1
+            },
+            "blocking": false,
+            "interactions": [
+                {
+                    "type": "talk",
+                    "description": "\"Did the bell ring already?\" The translucent student looks around nervously."
+                }
+            ]
+        },
+        {
+            "id": "teacher_spirit_npc",
+            "type": "npc",
+            "pos": {
+                "x": 10,
+                "y": 5
+            },
+            "size": {
+                "w": 1,
+                "h": 1
+            },
+            "blocking": true,
+            "interactions": [
+                {
+                    "type": "talk",
+                    "description": "A stern voice echoes: \"Class is not dismissed. It never is.\""
+                },
+                {
+                    "type": "inspect",
+                    "description": "The teacher’s form flickers, bound to this room by unfinished lessons."
+                }
+            ]
         }
     ]
 }

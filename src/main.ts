@@ -5,43 +5,87 @@ import { findInteractable } from "./interact";
 import type { Scene } from "./scene";
 import { renderTextBar } from "./ui";
 
-// src/main.ts
 const canvas = document.getElementById("game") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d")!;
 
+canvas.width = 640;
+canvas.height = 480;
+
+const TYPE_SPEED = 30;
+
+// ───────── UI State ─────────
 let uiText: string | null = null;
+let visibleText = "";
+let typingIndex = 0;
+let isTyping = false;
+let lastTypeTime = 0;
 
-const player = {
-  x: 10,
-  y: 12
-};
+// ───────── Player ─────────
+const player = { x: 10, y: 12 };
 
+// ───────── Scene ─────────
+let scene: Scene;
 
+// ───────── Typewriter ─────────
+function updateTypewriter(time: number) {
+  if (!isTyping || !uiText) return;
+
+  if (time - lastTypeTime >= TYPE_SPEED) {
+    visibleText += uiText[typingIndex];
+    typingIndex++;
+    lastTypeTime = time;
+
+    if (typingIndex >= uiText.length) {
+      isTyping = false;
+    }
+  }
+}
+
+// ───────── Input ─────────
 window.addEventListener("keydown", (e) => {
-  let next = { ...player };
-
-  if (e.key === "Escape") {
-    uiText = null;
+  // Finish typing instantly
+  if (uiText && isTyping && (e.key === " " || e.key === "Enter")) {
+    visibleText = uiText;
+    isTyping = false;
     return;
   }
 
+  // Close dialogue
+  if (uiText && !isTyping && (e.key === " " || e.key === "Escape")) {
+    uiText = null;
+    visibleText = "";
+    return;
+  }
 
-  if (e.key === "ArrowUp") next.y--;
-  if (e.key === "ArrowDown") next.y++;
-  if (e.key === "ArrowLeft") next.x--;
-  if (e.key === "ArrowRight") next.x++;
+  // Lock movement during dialogue
+  if (uiText) return;
 
-  if (e.key === "e") {
+  let next = { ...player };
+
+  if (e.key === "w") next.y--;
+  if (e.key === "s") next.y++;
+  if (e.key === "a") next.x--;
+  if (e.key === "d") next.x++;
+
+  if (e.key === "e" || e.key === "E") {
     const obj = findInteractable(scene, player);
 
-    if (obj) {
-      console.log(`interacting with ${obj.id}`)
-      for (const interaction of obj.interactions) {
-        uiText = `[${interaction.type}] ${interaction.description}`;
+    if (obj && obj.interactions.length > 0) {
+      const interaction =
+        obj.interactions.find(i => i.type === "talk") ??
+        obj.interactions[0];
 
-      }
+      uiText = `[${interaction.type}] ${interaction.description}`;
+      visibleText = "";
+      typingIndex = 0;
+      isTyping = true;
+      lastTypeTime = performance.now();
     } else {
-      uiText = "Nothing to interact with";
+      uiText = "Nothing to interact with.";
+      visibleText = "";
+      typingIndex = 0;
+      isTyping = true;
+      lastTypeTime = performance.now();
     }
 
     return;
@@ -52,30 +96,30 @@ window.addEventListener("keydown", (e) => {
     player.y = next.y;
   }
 });
-canvas.width = 640;
-canvas.height = 480;
 
-function loop() {
+// ───────── Game Loop ─────────
+function loop(time: number) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // placeholder background
   renderScene(ctx, scene);
 
+  // Player
   ctx.fillStyle = "white";
   ctx.fillRect(player.x * 32, player.y * 32, 32, 32);
-  requestAnimationFrame(loop);
+
+  updateTypewriter(time);
 
   if (uiText) {
-    renderTextBar(ctx, uiText);
+    renderTextBar(ctx, visibleText);
   }
+
+  requestAnimationFrame(loop);
 }
 
-let scene: Scene;
-
+// ───────── Init ─────────
 async function init() {
   scene = await loadScene("/scenes/classroom.json");
-  loop();
+  requestAnimationFrame(loop);
 }
 
 init();
-

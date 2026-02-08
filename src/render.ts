@@ -17,7 +17,13 @@ export function renderScene(
 
   // objects
   for (const obj of scene.objects) {
-    ctx.fillStyle = obj.blocking ? "#795548" : "#aaa";
+    if (obj.type === "npc") {
+      ctx.fillStyle = "#3f51b5"; // blue
+    } else if (obj.blocking) {
+      ctx.fillStyle = "#795548"; // brown
+    } else {
+      ctx.fillStyle = "#aaa";
+    }
     ctx.fillRect(
       obj.pos.x * TILE,
       obj.pos.y * TILE,
