@@ -1,7 +1,8 @@
-import { classroomScene } from "./scenes/classroom";
+import { loadScene } from "./sceneLoader";
 import { isWalkable } from "./collision";
 import { renderScene } from "./render";
 import { findInteractable } from "./interact";
+import type { Scene } from "./scene";
 
 // src/main.ts
 const canvas = document.getElementById("game") as HTMLCanvasElement;
@@ -24,7 +25,7 @@ window.addEventListener("keydown", (e) => {
   if (e.key === "ArrowRight") next.x++;
 
   if (e.key === "e") {
-    const obj = findInteractable(classroomScene, player);
+    const obj = findInteractable(scene, player);
 
     if (obj) {
       console.log(`interacting with ${obj.id}`)
@@ -39,7 +40,7 @@ window.addEventListener("keydown", (e) => {
     return;
   }
 
-  if (isWalkable(classroomScene, next)) {
+  if (isWalkable(scene, next)) {
     player.x = next.x;
     player.y = next.y;
   }
@@ -51,12 +52,19 @@ function loop() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   // placeholder background
-  renderScene(ctx, classroomScene);
+  renderScene(ctx, scene);
 
   ctx.fillStyle = "white";
   ctx.fillRect(player.x * 32, player.y * 32, 32, 32);
   requestAnimationFrame(loop);
 }
 
-loop();
+let scene: Scene;
+
+async function init() {
+  scene = await loadScene("/scenes/classroom.json");
+  loop();
+}
+
+init();
 
