@@ -1,6 +1,7 @@
 // src/scene.ts
 
 export type Vec2 = { x: number; y: number };
+export type Direction = "up" | "down" | "left" | "right"
 
 export interface Interaction {
   type: "inspect" | "talk" | "open";

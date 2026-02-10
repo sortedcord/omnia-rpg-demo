@@ -2,8 +2,9 @@ import { loadScene } from "./sceneLoader";
 import { isWalkable } from "./collision";
 import { renderScene } from "./render";
 import { findInteractable } from "./interact";
-import type { Scene } from "./scene";
+import type { Direction, Scene } from "./scene";
 import { renderTextBar } from "./ui";
+import { drawFacingOutline } from "./debugFacing";
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d")!;
@@ -13,20 +14,16 @@ canvas.height = 480;
 
 const TYPE_SPEED = 30;
 
-// ───────── UI State ─────────
 let uiText: string | null = null;
 let visibleText = "";
 let typingIndex = 0;
 let isTyping = false;
 let lastTypeTime = 0;
 
-// ───────── Player ─────────
-const player = { x: 10, y: 12 };
+const player = { x: 10, y: 12, facing: "down" as Direction };
 
-// ───────── Scene ─────────
 let scene: Scene;
 
-// ───────── Typewriter ─────────
 function updateTypewriter(time: number) {
   if (!isTyping || !uiText) return;
 
@@ -41,7 +38,6 @@ function updateTypewriter(time: number) {
   }
 }
 
-// ───────── Input ─────────
 window.addEventListener("keydown", (e) => {
   // Finish typing instantly
   if (uiText && isTyping && (e.key === " " || e.key === "Enter")) {
@@ -57,15 +53,27 @@ window.addEventListener("keydown", (e) => {
     return;
   }
 
-  // Lock movement during dialogue
   if (uiText) return;
 
   let next = { ...player };
 
-  if (e.key === "w") next.y--;
-  if (e.key === "s") next.y++;
-  if (e.key === "a") next.x--;
-  if (e.key === "d") next.x++;
+  if (e.key === "w") {
+    next.y--;
+    player.facing = "up";
+  }
+  if (e.key === "s") {
+    next.y++;
+    player.facing = "down";
+  }
+  if (e.key === "a") {
+    next.x--;
+    player.facing = "left";
+  }
+  if (e.key === "d") {
+    next.x++;
+    player.facing = "right";
+  }
+
 
   if (e.key === "e" || e.key === "E") {
     const obj = findInteractable(scene, player);
@@ -97,7 +105,6 @@ window.addEventListener("keydown", (e) => {
   }
 });
 
-// ───────── Game Loop ─────────
 function loop(time: number) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -106,6 +113,15 @@ function loop(time: number) {
   // Player
   ctx.fillStyle = "white";
   ctx.fillRect(player.x * 32, player.y * 32, 32, 32);
+
+  drawFacingOutline(
+    ctx,
+    player.x,
+    player.y,
+    1,
+    1,
+    player.facing
+  )
 
   updateTypewriter(time);
 
@@ -116,9 +132,8 @@ function loop(time: number) {
   requestAnimationFrame(loop);
 }
 
-// ───────── Init ─────────
 async function init() {
-  scene = await loadScene("/scenes/classroom.json");
+  scene = await loadScene("/scenes/classroom/classroom.json");
   requestAnimationFrame(loop);
 }
 

@@ -1,4 +1,3 @@
-
 import type { Scene, Vec2 } from "./scene";
 
 export function isWalkable(
