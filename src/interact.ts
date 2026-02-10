@@ -37,5 +37,14 @@ export function findInteractable(
   return null;
 }
 
+export function canInteract(
+  scene: Scene,
+  player: {
+    x: number;
+    y: number;
+    facing: Direction
+  }): boolean {
+  return findInteractable(scene, player) !== null;
+}
 
 

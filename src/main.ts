@@ -5,6 +5,7 @@ import { findInteractable } from "./interact";
 import type { Direction, Scene } from "./scene";
 import { renderTextBar } from "./ui";
 import { drawFacingOutline } from "./debugFacing";
+import { renderInteractPrompt } from "./hud";
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d")!;
@@ -110,6 +111,7 @@ function loop(time: number) {
 
   renderScene(ctx, scene);
 
+
   // Player
   ctx.fillStyle = "white";
   ctx.fillRect(player.x * 32, player.y * 32, 32, 32);
@@ -122,6 +124,20 @@ function loop(time: number) {
     1,
     player.facing
   )
+
+  if (!uiText) {
+    const obj = findInteractable(scene, player);
+
+    if (obj) {
+      const name =
+        obj.type === "npc"
+          ? "Interact with NPC"
+          : `Interact with ${obj.type}`;
+
+      renderInteractPrompt(ctx, name);
+    }
+  }
+
 
   updateTypewriter(time);
 
