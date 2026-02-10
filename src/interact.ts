@@ -1,22 +1,41 @@
-import type { Scene, Vec2, SceneObject } from "./scene";
+import type { Scene, SceneObject, Direction, Vec2 } from "./scene";
+
+export function facingOffset(dir: Direction): Vec2 {
+  switch (dir) {
+    case "up": return { x: 0, y: -1 };
+    case "down": return { x: 0, y: 1 };
+    case "left": return { x: -1, y: 0 };
+    case "right": return { x: 1, y: 0 };
+  }
+}
 
 export function findInteractable(
   scene: Scene,
-  player: Vec2
+  player: { x: number; y: number; facing: Direction }
 ): SceneObject | null {
+  const offset = facingOffset(player.facing);
+
+  const targetX = player.x + offset.x;
+  const targetY = player.y + offset.y;
+
   for (const obj of scene.objects) {
-    const nearX =
-      player.x >= obj.pos.x - 1 &&
-      player.x <= obj.pos.x + obj.size.w;
+    if (obj.interactions.length === 0) continue;
 
-    const nearY =
-      player.y >= obj.pos.y - 1 &&
-      player.y <= obj.pos.y + obj.size.h;
+    const insideX =
+      targetX >= obj.pos.x &&
+      targetX < obj.pos.x + obj.size.w;
 
-    if (nearX && nearY && obj.interactions.length > 0) {
+    const insideY =
+      targetY >= obj.pos.y &&
+      targetY < obj.pos.y + obj.size.h;
+
+    if (insideX && insideY) {
       return obj;
     }
   }
 
   return null;
 }
+
+
+
