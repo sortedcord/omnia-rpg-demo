@@ -2,7 +2,7 @@ import { loadScene } from "./sceneLoader";
 import { isWalkable } from "./collision";
 import { renderScene } from "./render";
 import { findInteractable } from "./interact";
-import type { Direction, Scene } from "./scene";
+import type { Direction, Interaction, InteractionAction, Scene } from "./scene";
 import { renderTextBar } from "./ui";
 import { drawFacingOutline } from "./debugFacing";
 import { renderInteractPrompt } from "./hud";
@@ -20,10 +20,55 @@ let visibleText = "";
 let typingIndex = 0;
 let isTyping = false;
 let lastTypeTime = 0;
-
+let activeInteraction: Interaction | null = null;
 const player = { x: 10, y: 12, facing: "down" as Direction };
 
+type WorldState = {
+  flags: Record<string, boolean>;
+};
+
+const worldState: WorldState = {
+  flags: {}
+};
+
+
 let scene: Scene;
+
+function buildInteractionText(interaction: Interaction): string {
+  let text = interaction.text;
+
+  if (interaction.next && interaction.next.length > 0) {
+    text += "\n\n";
+    interaction.next.forEach((opt, i) => {
+      text += `${i + 1}. ${opt.text}\n`;
+    });
+  }
+
+  return text;
+}
+
+
+function startInteraction(interaction: Interaction) {
+  uiText = buildInteractionText(interaction);
+  visibleText = "";
+  typingIndex = 0;
+  isTyping = true;
+  lastTypeTime = performance.now();
+}
+
+function applyActions(
+  actions?: InteractionAction[]
+) {
+  if (!actions) return;
+
+  for (const action of actions) {
+    if (action.type === "set_flag") {
+      worldState.flags[action.key] = action.value;
+    }
+  }
+}
+
+
 
 function updateTypewriter(time: number) {
   if (!isTyping || !uiText) return;
@@ -40,23 +85,40 @@ function updateTypewriter(time: number) {
 }
 
 window.addEventListener("keydown", (e) => {
-  // Finish typing instantly
   if (uiText && isTyping && (e.key === " " || e.key === "Enter")) {
     visibleText = uiText;
     isTyping = false;
     return;
   }
 
-  // Close dialogue
   if (uiText && !isTyping && (e.key === " " || e.key === "Escape")) {
     uiText = null;
     visibleText = "";
+    activeInteraction = null;
     return;
   }
+
 
   if (uiText) return;
 
   let next = { ...player };
+
+  if (
+    activeInteraction &&
+    !isTyping &&
+    activeInteraction.next &&
+    e.key >= "1" &&
+    e.key <= String(activeInteraction.next.length)
+  ) {
+    const choice =
+      activeInteraction.next[Number(e.key) - 1];
+
+    applyActions(choice.actions);
+    activeInteraction = choice;
+    startInteraction(choice);
+    return;
+  }
+
 
   if (e.key === "w") {
     next.y--;
@@ -77,28 +139,25 @@ window.addEventListener("keydown", (e) => {
 
 
   if (e.key === "e" || e.key === "E") {
+    // If already inside an interaction chain, do nothing here
+    if (activeInteraction) return;
+
     const obj = findInteractable(scene, player);
 
-    if (obj && obj.interactions.length > 0) {
-      const interaction =
-        obj.interactions.find(i => i.type === "talk") ??
-        obj.interactions[0];
-
-      uiText = `[${interaction.type}] ${interaction.description}`;
-      visibleText = "";
-      typingIndex = 0;
-      isTyping = true;
-      lastTypeTime = performance.now();
-    } else {
+    if (!obj || obj.interactions.length === 0) {
       uiText = "Nothing to interact with.";
       visibleText = "";
       typingIndex = 0;
       isTyping = true;
       lastTypeTime = performance.now();
+      return;
     }
 
+    activeInteraction = obj.interactions[0];
+    startInteraction(activeInteraction);
     return;
   }
+
 
   if (isWalkable(scene, next)) {
     player.x = next.x;

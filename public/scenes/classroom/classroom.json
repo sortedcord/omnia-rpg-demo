@@ -21,8 +21,32 @@
             "blocking": true,
             "interactions": [
                 {
-                    "type": "inspect",
-                    "description": "Faded chalk writing reads: \"Do not stay after the bell.\""
+                    "id": "inspect_board",
+                    "text": "Faded chalk writing reads: \"Do not stay after the bell.\"",
+                    "next": [
+                        {
+                            "id": "erase_board",
+                            "text": "Erase the writing",
+                            "actions": [
+                                {
+                                    "type": "set_flag",
+                                    "key": "board_empty",
+                                    "value": true
+                                }
+                            ]
+                        },
+                        {
+                            "id": "write_board",
+                            "text": "Write something on the board",
+                            "actions": [
+                                {
+                                    "type": "set_flag",
+                                    "key": "board_written_by_player",
+                                    "value": true
+                                }
+                            ]
+                        }
+                    ]
                 }
             ]
         },
@@ -40,8 +64,8 @@
             "blocking": true,
             "interactions": [
                 {
-                    "type": "inspect",
-                    "description": "Stacks of yellowed papers lie untouched for years."
+                    "id": "inspect_desk",
+                    "text": "Stacks of yellowed papers lie untouched for years."
                 }
             ]
         },
@@ -59,8 +83,8 @@
             "blocking": true,
             "interactions": [
                 {
-                    "type": "talk",
-                    "description": "The janitor grips his mop tightly. \"Funny thing about empty schools,\" he says. \"They’re never really empty.\""
+                    "id": "talk_janitor",
+                    "text": "The janitor grips his mop tightly. \"Funny thing about empty schools,\" he says. \"They’re never really empty.\""
                 }
             ]
         },
@@ -78,8 +102,8 @@
             "blocking": false,
             "interactions": [
                 {
-                    "type": "talk",
-                    "description": "\"Did the bell ring already?\" The translucent student looks around nervously."
+                    "id": "talk_student_ghost",
+                    "text": "\"Did the bell ring already?\" The translucent student looks around nervously."
                 }
             ]
         },
@@ -97,12 +121,14 @@
             "blocking": true,
             "interactions": [
                 {
-                    "type": "talk",
-                    "description": "A stern voice echoes: \"Class is not dismissed. It never is.\""
-                },
-                {
-                    "type": "inspect",
-                    "description": "The teacher’s form flickers, bound to this room by unfinished lessons."
+                    "id": "talk_teacher_spirit",
+                    "text": "A stern voice echoes: \"Class is not dismissed. It never is.\"",
+                    "next": [
+                        {
+                            "id": "inspect_teacher_spirit",
+                            "text": "Look closer at the teacher’s form"
+                        }
+                    ]
                 }
             ]
         }

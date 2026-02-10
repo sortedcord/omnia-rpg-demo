@@ -4,8 +4,16 @@ export type Vec2 = { x: number; y: number };
 export type Direction = "up" | "down" | "left" | "right"
 
 export interface Interaction {
-  type: "inspect" | "talk" | "open";
-  description: string;
+  id: string;
+  text: string;
+  actions?: InteractionAction[];
+  next?: Interaction[];
+}
+
+export interface InteractionAction {
+  type: "set_flag";
+  key: string;
+  value: boolean;
 }
 
 export interface SceneObject {
