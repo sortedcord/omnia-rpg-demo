@@ -1,11 +1,21 @@
 import { loadScene } from "../world/sceneLoader";
 import { isWalkable } from "../engine/collision";
-import { renderScene } from "../presentation/render";
 import { findInteractable } from "../engine/interact";
-import type { Direction, Interaction, InteractionAction, Scene } from "../world/scene";
+import { renderScene } from "../presentation/render";
 import { renderTextBar } from "../presentation/ui";
-import { drawFacingOutline } from "../presentation/debugFacing";
 import { renderInteractPrompt } from "../presentation/hud";
+import { drawFacingOutline } from "../presentation/debugFacing";
+import { renderChoices } from "../presentation/choices";
+
+import type { Scene } from "../world/scene";
+import type { GameState } from "./gameState";
+
+import {
+  startInteraction,
+  applyActions
+} from "./interactionController";
+
+import { updateTypewriter } from "./typewriter";
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d")!;
@@ -13,202 +23,145 @@ const ctx = canvas.getContext("2d")!;
 canvas.width = 640;
 canvas.height = 480;
 
-const TYPE_SPEED = 30;
-
-let uiText: string | null = null;
-let visibleText = "";
-let typingIndex = 0;
-let isTyping = false;
-let lastTypeTime = 0;
-let activeInteraction: Interaction | null = null;
-const player = { x: 10, y: 12, facing: "down" as Direction };
-
-type WorldState = {
-  flags: Record<string, boolean>;
-};
-
-const worldState: WorldState = {
-  flags: {}
-};
-
-
-let scene: Scene;
-
-function buildInteractionText(interaction: Interaction): string {
-  let text = interaction.text;
-
-  if (interaction.next && interaction.next.length > 0) {
-    text += "\n\n";
-    interaction.next.forEach((opt, i) => {
-      text += `${i + 1}. ${opt.text}\n`;
-    });
-  }
-
-  return text;
-}
-
-
-function startInteraction(interaction: Interaction) {
-  uiText = buildInteractionText(interaction);
-  visibleText = "";
-  typingIndex = 0;
-  isTyping = true;
-  lastTypeTime = performance.now();
-}
-
-function applyActions(
-  actions?: InteractionAction[]
-) {
-  if (!actions) return;
-
-  for (const action of actions) {
-    if (action.type === "set_flag") {
-      worldState.flags[action.key] = action.value;
-    }
-  }
-}
-
-
-
-function updateTypewriter(time: number) {
-  if (!isTyping || !uiText) return;
-
-  if (time - lastTypeTime >= TYPE_SPEED) {
-    visibleText += uiText[typingIndex];
-    typingIndex++;
-    lastTypeTime = time;
-
-    if (typingIndex >= uiText.length) {
-      isTyping = false;
-    }
-  }
-}
+let state: GameState;
 
 window.addEventListener("keydown", (e) => {
-  if (uiText && isTyping && (e.key === " " || e.key === "Enter")) {
-    visibleText = uiText;
-    isTyping = false;
+  // Finish typing
+  if (state.uiText && state.isTyping && (e.key === " " || e.key === "Enter")) {
+    state.visibleText = state.uiText;
+    state.isTyping = false;
     return;
   }
 
-  if (uiText && !isTyping && (e.key === " " || e.key === "Escape")) {
-    uiText = null;
-    visibleText = "";
-    activeInteraction = null;
+  // Close interaction
+  if (state.uiText && !state.isTyping && (e.key === " " || e.key === "Escape")) {
+    state.uiText = null;
+    state.visibleText = "";
+    state.activeInteraction = null;
     return;
   }
 
-
-  if (uiText) return;
-
-  let next = { ...player };
-
+  // Choice selection
   if (
-    activeInteraction &&
-    !isTyping &&
-    activeInteraction.next &&
+    state.activeInteraction &&
+    !state.isTyping &&
+    state.activeInteraction.next &&
     e.key >= "1" &&
-    e.key <= String(activeInteraction.next.length)
+    e.key <= String(state.activeInteraction.next.length)
   ) {
     const choice =
-      activeInteraction.next[Number(e.key) - 1];
+      state.activeInteraction.next[Number(e.key) - 1];
 
-    applyActions(choice.actions);
-    activeInteraction = choice;
-    startInteraction(choice);
+    applyActions(state, choice.actions);
+    startInteraction(state, choice);
     return;
   }
 
+  if (state.uiText) return;
+
+  let next = { ...state.player };
 
   if (e.key === "w") {
     next.y--;
-    player.facing = "up";
+    state.player.facing = "up";
   }
   if (e.key === "s") {
     next.y++;
-    player.facing = "down";
+    state.player.facing = "down";
   }
   if (e.key === "a") {
     next.x--;
-    player.facing = "left";
+    state.player.facing = "left";
   }
   if (e.key === "d") {
     next.x++;
-    player.facing = "right";
+    state.player.facing = "right";
   }
 
-
   if (e.key === "e" || e.key === "E") {
-    // If already inside an interaction chain, do nothing here
-    if (activeInteraction) return;
-
-    const obj = findInteractable(scene, player);
+    const obj = findInteractable(state.scene, state.player);
 
     if (!obj || obj.interactions.length === 0) {
-      uiText = "Nothing to interact with.";
-      visibleText = "";
-      typingIndex = 0;
-      isTyping = true;
-      lastTypeTime = performance.now();
+      state.uiText = "Nothing to interact with.";
+      state.visibleText = "";
+      state.typingIndex = 0;
+      state.isTyping = true;
+      state.lastTypeTime = performance.now();
       return;
     }
 
-    activeInteraction = obj.interactions[0];
-    startInteraction(activeInteraction);
+    startInteraction(state, obj.interactions[0]);
     return;
   }
 
-
-  if (isWalkable(scene, next)) {
-    player.x = next.x;
-    player.y = next.y;
+  if (isWalkable(state.scene, next)) {
+    state.player.x = next.x;
+    state.player.y = next.y;
   }
 });
 
 function loop(time: number) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  renderScene(ctx, scene);
+  renderScene(ctx, state.scene);
 
-
-  // Player
   ctx.fillStyle = "white";
-  ctx.fillRect(player.x * 32, player.y * 32, 32, 32);
+  ctx.fillRect(state.player.x * 32, state.player.y * 32, 32, 32);
 
   drawFacingOutline(
     ctx,
-    player.x,
-    player.y,
+    state.player.x,
+    state.player.y,
     1,
     1,
-    player.facing
-  )
+    state.player.facing
+  );
 
-  if (!uiText) {
-    const obj = findInteractable(scene, player);
-
+  if (!state.uiText) {
+    const obj = findInteractable(state.scene, state.player);
     if (obj) {
-      const name =
+      renderInteractPrompt(
+        ctx,
         obj.type === "npc"
           ? "Interact with NPC"
-          : `Interact with ${obj.type}`;
-
-      renderInteractPrompt(ctx, name);
+          : `Interact with ${obj.type}`
+      );
     }
   }
 
+  updateTypewriter(state, time);
 
-  updateTypewriter(time);
+  if (state.uiText) {
+    renderTextBar(ctx, state.visibleText);
 
-  if (uiText) {
-    renderTextBar(ctx, visibleText);
+    if (
+      state.activeInteraction &&
+      !state.isTyping &&
+      state.activeInteraction.next
+    ) {
+      renderChoices(ctx, state.activeInteraction);
+    }
   }
+
 
   requestAnimationFrame(loop);
 }
 
 async function init() {
-  scene = await loadScene("/scenes/classroom/classroom.json");
+  const scene: Scene = await loadScene("/scenes/classroom/classroom.json");
+
+  state = {
+    scene,
+    player: { x: 10, y: 12, facing: "down" },
+    worldState: { flags: {} },
+    uiText: null,
+    visibleText: "",
+    typingIndex: 0,
+    isTyping: false,
+    lastTypeTime: 0,
+    activeInteraction: null
+  };
+
   requestAnimationFrame(loop);
 }
 
