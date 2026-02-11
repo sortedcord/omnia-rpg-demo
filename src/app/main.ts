@@ -59,27 +59,35 @@ window.addEventListener("keydown", (e) => {
 
   if (state.uiText) return;
 
-  let next = { ...state.player };
+  const controlled = getControlled(state.scene);
+  let next = { x: controlled.pos.x, y: controlled.pos.y };
 
   if (e.key === "w") {
     next.y--;
-    state.player.facing = "up";
+    controlled.facing = "up";
   }
   if (e.key === "s") {
     next.y++;
-    state.player.facing = "down";
+    controlled.facing = "down";
   }
   if (e.key === "a") {
     next.x--;
-    state.player.facing = "left";
+    controlled.facing = "left";
   }
   if (e.key === "d") {
     next.x++;
-    state.player.facing = "right";
+    controlled.facing = "right";
   }
 
   if (e.key === "e" || e.key === "E") {
-    const obj = findInteractable(state.scene, state.player);
+    const controlled = getControlled(state.scene);
+
+    const obj = findInteractable(state.scene, {
+      x: controlled.pos.x,
+      y: controlled.pos.y,
+      facing: controlled.facing ?? "down"
+    });
+
 
     if (!obj || obj.interactions.length === 0) {
       state.uiText = "Nothing to interact with.";
@@ -95,8 +103,8 @@ window.addEventListener("keydown", (e) => {
   }
 
   if (isWalkable(state.scene, next)) {
-    state.player.x = next.x;
-    state.player.y = next.y;
+    controlled.pos.x = next.x;
+    controlled.pos.y = next.y;
   }
 });
 
@@ -105,20 +113,27 @@ function loop(time: number) {
 
   renderScene(ctx, state.scene);
 
+  const controlled = getControlled(state.scene);
+
   ctx.fillStyle = "white";
-  ctx.fillRect(state.player.x * 32, state.player.y * 32, 32, 32);
+  ctx.fillRect(
+    controlled.pos.x * 32,
+    controlled.pos.y * 32,
+    controlled.size.w * 32,
+    controlled.size.h * 32
+  );
 
   drawFacingOutline(
     ctx,
-    state.player.x,
-    state.player.y,
+    controlled.pos.x,
+    controlled.pos.y,
     1,
     1,
-    state.player.facing
+    controlled.facing ?? "down"
   );
 
   if (!state.uiText) {
-    const obj = findInteractable(state.scene, state.player);
+    const obj = findInteractable(state.scene, { x: controlled.pos.x, y: controlled.pos.y, facing: controlled.facing });
     if (obj) {
       renderInteractPrompt(
         ctx,
@@ -147,12 +162,17 @@ function loop(time: number) {
   requestAnimationFrame(loop);
 }
 
+function getControlled(scene: Scene) {
+  const entity = scene.objects.find(o => o.controlled);
+  if (!entity) throw new Error("No controlled entity found.");
+  return entity;
+}
+
 async function init() {
   const scene: Scene = await loadScene("/scenes/classroom/classroom.json");
 
   state = {
     scene,
-    player: { x: 10, y: 12, facing: "down" },
     worldState: { flags: {} },
     uiText: null,
     visibleText: "",

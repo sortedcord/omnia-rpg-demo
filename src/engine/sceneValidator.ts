@@ -42,5 +42,12 @@ export function validatorScene(scene: Scene): Scene {
         }
     }
 
+    // Only one controlled entity allowed
+    const controlled = scene.objects.filter(o => o.controlled);
+    if (controlled.length > 1) {
+        throw new Error("Only one entity can be controlled at a time.");
+    }
+
+
     return scene;
 }

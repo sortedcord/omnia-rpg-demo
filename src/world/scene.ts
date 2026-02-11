@@ -23,6 +23,9 @@ export interface SceneObject {
   size: { w: number; h: number };
   blocking: boolean;
   interactions: Interaction[];
+
+  controlled?: boolean;
+  facing?: Direction;
 }
 
 export interface Scene {

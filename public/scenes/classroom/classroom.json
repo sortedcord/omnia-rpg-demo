@@ -8,6 +8,22 @@
     "description": "A dusty abandoned classroom. Sunlight leaks through cracked windows, illuminating old desks frozen in time.",
     "objects": [
         {
+            "id": "student_player",
+            "type": "npc",
+            "pos": {
+                "x": 10,
+                "y": 12
+            },
+            "size": {
+                "w": 1,
+                "h": 1
+            },
+            "blocking": true,
+            "controlled": true,
+            "facing": "down",
+            "interactions": []
+        },
+        {
             "id": "blackboard",
             "type": "blackboard",
             "pos": {
@@ -81,6 +97,8 @@
                 "h": 1
             },
             "blocking": true,
+            "facing": "left",
+            "controlled": false,
             "interactions": [
                 {
                     "id": "talk_janitor",
@@ -100,6 +118,7 @@
                 "h": 1
             },
             "blocking": false,
+            "facing": "right",
             "interactions": [
                 {
                     "id": "talk_student_ghost",
@@ -119,6 +138,7 @@
                 "h": 1
             },
             "blocking": true,
+            "facing": "down",
             "interactions": [
                 {
                     "id": "talk_teacher_spirit",
