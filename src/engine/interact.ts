@@ -1,4 +1,4 @@
-import type { Scene, SceneObject, Direction, Vec2 } from "./scene";
+import type { Scene, SceneObject, Direction, Vec2 } from "../world/scene";
 
 export function facingOffset(dir: Direction): Vec2 {
   switch (dir) {

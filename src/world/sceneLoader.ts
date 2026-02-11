@@ -1,5 +1,5 @@
-import type { Scene } from "./scene";
-import { validatorScene } from "./sceneValidator";
+import type { Scene } from "../world/scene";
+import { validatorScene } from "../engine/sceneValidator";
 
 export async function loadScene(
     path: string

@@ -1,11 +1,11 @@
-import { loadScene } from "./sceneLoader";
-import { isWalkable } from "./collision";
-import { renderScene } from "./render";
-import { findInteractable } from "./interact";
-import type { Direction, Interaction, InteractionAction, Scene } from "./scene";
-import { renderTextBar } from "./ui";
-import { drawFacingOutline } from "./debugFacing";
-import { renderInteractPrompt } from "./hud";
+import { loadScene } from "../world/sceneLoader";
+import { isWalkable } from "../engine/collision";
+import { renderScene } from "../presentation/render";
+import { findInteractable } from "../engine/interact";
+import type { Direction, Interaction, InteractionAction, Scene } from "../world/scene";
+import { renderTextBar } from "../presentation/ui";
+import { drawFacingOutline } from "../presentation/debugFacing";
+import { renderInteractPrompt } from "../presentation/hud";
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d")!;

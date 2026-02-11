@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { findInteractable } from "./interact";
-import type { Scene } from "./scene";
+import { findInteractable } from "../engine/interact";
+import type { Scene } from "../world/scene";
 
 const scene: Scene = {
   id: "test",

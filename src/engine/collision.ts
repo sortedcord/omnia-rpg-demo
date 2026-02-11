@@ -1,4 +1,4 @@
-import type { Scene, Vec2 } from "./scene";
+import type { Scene, Vec2 } from "../world/scene";
 
 export function isWalkable(
   scene: Scene,

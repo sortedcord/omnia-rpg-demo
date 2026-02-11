@@ -1,4 +1,4 @@
-import type { Direction } from "./scene";
+import type { Direction } from "../world/scene";
 
 export function drawFacingOutline(
     ctx: CanvasRenderingContext2D,

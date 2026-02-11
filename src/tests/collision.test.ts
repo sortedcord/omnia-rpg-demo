@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { isWalkable } from "./collision";
-import type { Scene } from "./scene";
+import { isWalkable } from "../engine/collision";
+import type { Scene } from "../world/scene";
 
 const scene: Scene = {
   id: "test",
