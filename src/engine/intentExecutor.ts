@@ -38,13 +38,21 @@ export function executeIntentForEntity(
         }
 
         case "say": {
-            // For now, NPC speech just logs
-            console.log(intent.text);
+            state.uiText = `You say, "${intent.text}"`;
+            state.visibleText = "";
+            state.typingIndex = 0;
+            state.isTyping = true;
+            state.lastTypeTime = performance.now();
             break;
         }
 
-        case "interact":
-            // leave for later
+        case "do": {
+            state.uiText = `You do ${intent.text}`;
+            state.visibleText = "";
+            state.typingIndex = 0;
+            state.isTyping = true;
+            state.lastTypeTime = performance.now();
             break;
+        }
     }
 }

@@ -1,5 +1,4 @@
 import { loadScene } from "../world/sceneLoader";
-import { isWalkable } from "../engine/collision";
 import { findInteractable } from "../engine/interact";
 import { renderScene } from "../presentation/render";
 import { renderTextBar } from "../presentation/ui";
@@ -27,7 +26,63 @@ canvas.height = 480;
 
 let state: GameState;
 
+function getInteractionOptions(state: GameState) {
+  if (!state.activeInteraction) return [];
+
+  const baseOptions = state.activeInteraction.next ?? [];
+
+  const genericOptions: typeof baseOptions = [
+    { id: "generic_say", text: "Say..." },
+    { id: "generic_do", text: "Do..." }
+  ];
+
+  return [...baseOptions, ...genericOptions];
+}
+
+
 window.addEventListener("keydown", (e) => {
+  // INPUT MODE HAS HIGHEST PRIORITY
+  if (state.inputMode) {
+    if (e.key === "Enter") {
+      const intent = {
+        type: state.inputMode,
+        text: state.inputBuffer,
+        targetId: state.inputTargetId ?? undefined
+      };
+
+      executeIntent(state, intent as any);
+
+      state.inputMode = null;
+      state.inputBuffer = "";
+      state.inputTargetId = null;
+      state.activeInteraction = null;
+
+      return;
+    }
+
+    if (e.key === "Escape") {
+      state.inputMode = null;
+      state.inputBuffer = "";
+      state.inputTargetId = null;
+      state.uiText = null;
+      state.visibleText = "";
+      state.activeInteraction = null;
+      return;
+    }
+
+    if (e.key === "Backspace") {
+      state.inputBuffer = state.inputBuffer.slice(0, -1);
+      return;
+    }
+
+    if (e.key.length === 1) {
+      state.inputBuffer += e.key;
+      return;
+    }
+
+    return;
+  }
+
   // Finish typing
   if (state.uiText && state.isTyping && (e.key === " " || e.key === "Enter")) {
     state.visibleText = state.uiText;
@@ -35,34 +90,45 @@ window.addEventListener("keydown", (e) => {
     return;
   }
 
-  // Close interaction
-  if (state.uiText && !state.isTyping && (e.key === " " || e.key === "Escape")) {
+  // Close interaction / dialogue (Escape only)
+  if (state.uiText && !state.isTyping && e.key === "Escape") {
     state.uiText = null;
     state.visibleText = "";
     state.activeInteraction = null;
+    state.inputMode = null;
+    state.inputBuffer = "";
+    state.inputTargetId = null;
     return;
   }
 
   // Choice selection
-  if (
-    state.activeInteraction &&
-    !state.isTyping &&
-    state.activeInteraction.next &&
-    e.key >= "1" &&
-    e.key <= String(state.activeInteraction.next.length)
-  ) {
-    const choice =
-      state.activeInteraction.next[Number(e.key) - 1];
+  if (state.activeInteraction && !state.isTyping) {
+    const options = getInteractionOptions(state);
 
-    applyActions(state, choice.actions);
-    startInteraction(state, choice);
-    return;
+    if (e.key >= "1" && e.key <= String(options.length)) {
+      const choice = options[Number(e.key) - 1];
+
+      if (choice.id === "generic_say") {
+        state.inputMode = "say";
+        state.inputBuffer = "";
+        state.inputTargetId = state.currentTargetId;
+        state.uiText = "You say:";
+        return;
+      }
+
+      if (choice.id === "generic_do") {
+        state.inputMode = "do";
+        state.inputBuffer = "";
+        state.inputTargetId = state.currentTargetId;
+        state.uiText = "Enter your action:";
+        return;
+      }
+
+      applyActions(state, choice.actions ?? []);
+      startInteraction(state, choice);
+      return;
+    }
   }
-
-  if (state.uiText) return;
-
-  const controlled = getControlled(state.scene);
-  let next = { x: controlled.pos.x, y: controlled.pos.y };
 
   if (e.key === "w") {
     executeIntent(state, { type: "move", direction: "up" });
@@ -97,7 +163,10 @@ window.addEventListener("keydown", (e) => {
       return;
     }
 
+    state.currentTargetId = obj.id;
     startInteraction(state, obj.interactions[0]);
+
+
     return;
   }
 
@@ -148,7 +217,11 @@ function loop(time: number) {
   );
 
   if (!state.uiText) {
-    const obj = findInteractable(state.scene, { x: controlled.pos.x, y: controlled.pos.y, facing: controlled.facing });
+    const obj = findInteractable(state.scene, {
+      x: controlled.pos.x,
+      y: controlled.pos.y,
+      facing: controlled.facing ?? "down"
+    });
     if (obj) {
       renderInteractPrompt(
         ctx,
@@ -161,18 +234,20 @@ function loop(time: number) {
 
   updateTypewriter(state, time);
 
-  if (state.uiText) {
+  if (state.inputMode) {
+    renderTextBar(ctx, `${state.uiText}\n> ${state.inputBuffer}`);
+  } else if (state.uiText) {
     renderTextBar(ctx, state.visibleText);
 
-    if (
-      state.activeInteraction &&
-      !state.isTyping &&
-      state.activeInteraction.next
-    ) {
-      renderChoices(ctx, state.activeInteraction);
+    if (state.activeInteraction && !state.isTyping) {
+      const options = getInteractionOptions(state);
+
+      renderChoices(ctx, {
+        ...state.activeInteraction,
+        next: options
+      });
     }
   }
-
 
   requestAnimationFrame(loop);
 }
@@ -194,7 +269,11 @@ async function init() {
     typingIndex: 0,
     isTyping: false,
     lastTypeTime: 0,
-    activeInteraction: null
+    activeInteraction: null,
+    inputMode: null,
+    inputBuffer: "",
+    inputTargetId: null,
+    currentTargetId: null
   };
 
   requestAnimationFrame(loop);

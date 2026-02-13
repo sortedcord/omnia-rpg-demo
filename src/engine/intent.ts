@@ -10,4 +10,10 @@ export type Intent =
     | {
         type: "say";
         text: string;
+        targetId?: string;
+    }
+    | {
+        type: "do";
+        text: string;
+        targetId?: string;
     };

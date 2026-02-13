@@ -1,4 +1,4 @@
-import type { Direction, Interaction, Scene } from "../world/scene";
+import type { Interaction, Scene } from "../world/scene";
 
 export type WorldState = {
     flags: Record<string, boolean>;
@@ -15,5 +15,11 @@ export type GameState = {
     isTyping: boolean;
     lastTypeTime: number;
     activeInteraction: Interaction | null;
+    inputMode: null | "say" | "do";
+    inputBuffer: string;
+    inputTargetId: string | null;
+
+    currentTargetId: string | null;
+
 };
 
