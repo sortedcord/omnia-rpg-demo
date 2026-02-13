@@ -16,6 +16,8 @@ import {
 } from "./interactionController";
 
 import { updateTypewriter } from "./typewriter";
+import { executeIntent, executeIntentForEntity } from "../engine/intentExecutor";
+import { generateIntentForNPC } from "../engine/fakeAI";
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d")!;
@@ -63,20 +65,17 @@ window.addEventListener("keydown", (e) => {
   let next = { x: controlled.pos.x, y: controlled.pos.y };
 
   if (e.key === "w") {
-    next.y--;
-    controlled.facing = "up";
+    executeIntent(state, { type: "move", direction: "up" });
   }
   if (e.key === "s") {
-    next.y++;
-    controlled.facing = "down";
+    executeIntent(state, { type: "move", direction: "down" });
   }
+
   if (e.key === "a") {
-    next.x--;
-    controlled.facing = "left";
+    executeIntent(state, { type: "move", direction: "left" });
   }
   if (e.key === "d") {
-    next.x++;
-    controlled.facing = "right";
+    executeIntent(state, { type: "move", direction: "right" });
   }
 
   if (e.key === "e" || e.key === "E") {
@@ -102,13 +101,29 @@ window.addEventListener("keydown", (e) => {
     return;
   }
 
-  if (isWalkable(state.scene, next)) {
-    controlled.pos.x = next.x;
-    controlled.pos.y = next.y;
-  }
+  // if (isWalkable(state.scene, next)) {
+  //   controlled.pos.x = next.x;
+  //   controlled.pos.y = next.y;
+  // }
 });
 
+let lastNPCTick = 0;
+const NPC_TICK_INTERVAL = 1000; // 1 second
+
 function loop(time: number) {
+  if (time - lastNPCTick > NPC_TICK_INTERVAL) {
+    lastNPCTick = time;
+
+    for (const obj of state.scene.objects) {
+      if (obj.type !== "npc") continue;
+      if (obj.controlled) continue; // skip player
+
+      const intent = generateIntentForNPC(obj);
+
+      executeIntentForEntity(state, obj, intent);
+    }
+  }
+
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   renderScene(ctx, state.scene);

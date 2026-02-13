@@ -2,7 +2,8 @@ import type { Scene, Vec2 } from "../world/scene";
 
 export function isWalkable(
   scene: Scene,
-  pos: Vec2
+  pos: Vec2,
+  ignoreId?: string
 ): boolean {
   // scene bounds
   if (
@@ -17,6 +18,8 @@ export function isWalkable(
   // object collisions
   for (const obj of scene.objects) {
     if (!obj.blocking) continue;
+    if (obj.id === ignoreId) continue;
+
 
     const withinX =
       pos.x >= obj.pos.x &&
