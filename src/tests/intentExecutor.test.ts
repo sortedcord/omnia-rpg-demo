@@ -14,7 +14,12 @@ function makeState(): GameState {
 
     return {
         scene,
-        worldState: { flags: {} },
+        worldState: {
+            flags: {},
+            time: { day: 1, hour: 9, minute: 0 },
+            health: 100,
+            inventory: []
+        },
         chatBubbles: [],
         uiText: null,
         visibleText: "",

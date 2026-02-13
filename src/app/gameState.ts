@@ -2,6 +2,15 @@ import type { Interaction, Scene } from "../world/scene";
 
 export type WorldState = {
     flags: Record<string, boolean>;
+
+    time: {
+        day: number;
+        hour: number;
+        minute: number;
+    };
+
+    health: number;
+    inventory: string[];
 };
 
 export type ChatBubble = {

@@ -6,6 +6,7 @@ import { renderInteractPrompt } from "../presentation/hud";
 import { drawFacingOutline } from "../presentation/debugFacing";
 import { renderChoices } from "../presentation/choices";
 import { pruneChatBubbles, renderChatBubbles } from "../presentation/chatBubbles";
+import { renderDevHUD } from "../presentation/devHud.ts";
 
 import type { Scene } from "../world/scene";
 import type { GameState } from "./gameState";
@@ -205,6 +206,8 @@ function loop(time: number) {
 
   renderChatBubbles(ctx, state.scene, state.chatBubbles);
 
+  renderDevHUD(ctx, state);
+
   const controlled = getControlled(state.scene);
 
   ctx.fillStyle = "white";
@@ -271,7 +274,12 @@ async function init() {
 
   state = {
     scene,
-    worldState: { flags: {} },
+    worldState: {
+      flags: {},
+      time: { day: 1, hour: 9, minute: 0 },
+      health: 100,
+      inventory: []
+    },
 
     chatBubbles: [],
     uiText: null,
