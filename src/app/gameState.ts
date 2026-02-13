@@ -4,10 +4,19 @@ export type WorldState = {
     flags: Record<string, boolean>;
 };
 
+export type ChatBubble = {
+    entityId: string;
+    text: string;
+    createdAt: number;
+    ttlMs: number;
+};
+
 
 export type GameState = {
     scene: Scene;
     worldState: WorldState;
+
+    chatBubbles: ChatBubble[];
 
     uiText: string | null;
     visibleText: string;

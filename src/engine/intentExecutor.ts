@@ -38,11 +38,40 @@ export function executeIntentForEntity(
         }
 
         case "say": {
-            state.uiText = `You say, "${intent.text}"`;
-            state.visibleText = "";
-            state.typingIndex = 0;
-            state.isTyping = true;
-            state.lastTypeTime = performance.now();
+            const now = performance.now();
+
+            const target = intent.targetId
+                ? state.scene.objects.find(o => o.id === intent.targetId)
+                : null;
+
+            const controlled = state.scene.objects.find(o => o.controlled);
+            const isControlledSpeaker = !!entity.controlled;
+            const directedToControlled =
+                !!intent.targetId && !!controlled && intent.targetId === controlled.id;
+
+            // Bubble rules:
+            // - Never show a bubble when talking to an NPC (direct target is npc)
+            // - Otherwise show a bubble above the speaker
+            if (!target || target.type !== "npc") {
+                state.chatBubbles.push({
+                    entityId: entity.id,
+                    text: intent.text,
+                    createdAt: now,
+                    ttlMs: 4000
+                });
+            }
+
+            // Bottom prompt rules:
+            // - Controlled speaker: always show bottom prompt.
+            // - NPC speaker: show bottom prompt only if directed to controlled.
+            const showBottomPrompt = isControlledSpeaker || directedToControlled;
+            if (showBottomPrompt) {
+                state.uiText = `You say, "${intent.text}"`;
+                state.visibleText = "";
+                state.typingIndex = 0;
+                state.isTyping = true;
+                state.lastTypeTime = now;
+            }
             break;
         }
 

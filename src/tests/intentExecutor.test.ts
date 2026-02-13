@@ -15,6 +15,7 @@ function makeState(): GameState {
     return {
         scene,
         worldState: { flags: {} },
+        chatBubbles: [],
         uiText: null,
         visibleText: "",
         typingIndex: 0,
@@ -50,6 +51,9 @@ describe("executeIntentForEntity say/do", () => {
 
         expect(state.uiText).toBe('You say, "hello"');
         expect(state.isTyping).toBe(true);
+        expect(state.chatBubbles).toHaveLength(1);
+        expect(state.chatBubbles[0].entityId).toBe("player");
+        expect(state.chatBubbles[0].text).toBe("hello");
     });
 
     it("formats do as: You do text", () => {
@@ -61,5 +65,104 @@ describe("executeIntentForEntity say/do", () => {
 
         expect(state.uiText).toBe("You do a flip");
         expect(state.isTyping).toBe(true);
+    });
+
+    it("shows bubble-only for NPC say not directed at controlled", () => {
+        const state = makeState();
+        const player = makeEntity();
+        const npc: SceneObject = {
+            id: "npc1",
+            type: "npc",
+            pos: { x: 0, y: 0 },
+            size: { w: 1, h: 1 },
+            blocking: false,
+            interactions: []
+        };
+
+        state.scene.objects.push(player, npc);
+
+        executeIntentForEntity(state, npc, {
+            type: "say",
+            text: "nice weather"
+        });
+
+        expect(state.chatBubbles).toHaveLength(1);
+        expect(state.chatBubbles[0].entityId).toBe("npc1");
+        expect(state.chatBubbles[0].text).toBe("nice weather");
+
+        // No bottom prompt text for NPC chatter not aimed at the controlled.
+        expect(state.uiText).toBe(null);
+    });
+
+    it("does not create a bubble when targeting an NPC", () => {
+        const state = makeState();
+        const player = makeEntity();
+        const npc: SceneObject = {
+            id: "npc1",
+            type: "npc",
+            pos: { x: 0, y: 0 },
+            size: { w: 1, h: 1 },
+            blocking: false,
+            interactions: []
+        };
+
+        state.scene.objects.push(player, npc);
+
+        executeIntentForEntity(state, player, {
+            type: "say",
+            text: "hi",
+            targetId: "npc1"
+        });
+
+        expect(state.chatBubbles).toHaveLength(0);
+        expect(state.uiText).toBe('You say, "hi"');
+    });
+
+    it("shows both bubble and bottom prompt when player talks to an object", () => {
+        const state = makeState();
+        const player = makeEntity();
+        const desk: SceneObject = {
+            id: "desk1",
+            type: "desk",
+            pos: { x: 0, y: 0 },
+            size: { w: 1, h: 1 },
+            blocking: true,
+            interactions: []
+        };
+
+        state.scene.objects.push(player, desk);
+
+        executeIntentForEntity(state, player, {
+            type: "say",
+            text: "what a mess!",
+            targetId: "desk1"
+        });
+
+        expect(state.uiText).toBe('You say, "what a mess!"');
+        expect(state.chatBubbles).toHaveLength(1);
+        expect(state.chatBubbles[0].entityId).toBe("player");
+    });
+
+    it("shows bottom prompt when NPC talks to controlled, but no bubble when targeting npc rules apply", () => {
+        const state = makeState();
+        const player = makeEntity();
+        const npc: SceneObject = {
+            id: "npc1",
+            type: "npc",
+            pos: { x: 0, y: 0 },
+            size: { w: 1, h: 1 },
+            blocking: false,
+            interactions: []
+        };
+
+        state.scene.objects.push(player, npc);
+
+        executeIntentForEntity(state, npc, {
+            type: "say",
+            text: "hello",
+            targetId: "player"
+        });
+
+        expect(state.uiText).toBe('You say, "hello"');
     });
 });

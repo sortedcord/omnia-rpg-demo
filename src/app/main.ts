@@ -5,6 +5,7 @@ import { renderTextBar } from "../presentation/ui";
 import { renderInteractPrompt } from "../presentation/hud";
 import { drawFacingOutline } from "../presentation/debugFacing";
 import { renderChoices } from "../presentation/choices";
+import { pruneChatBubbles, renderChatBubbles } from "../presentation/chatBubbles";
 
 import type { Scene } from "../world/scene";
 import type { GameState } from "./gameState";
@@ -44,6 +45,10 @@ window.addEventListener("keydown", (e) => {
   // INPUT MODE HAS HIGHEST PRIORITY
   if (state.inputMode) {
     if (e.key === "Enter") {
+      // Preserve where we are in the interaction tree so after the say/do text
+      // plays the player can continue from the same menu.
+      const resumeInteraction = state.activeInteraction;
+
       const intent = {
         type: state.inputMode,
         text: state.inputBuffer,
@@ -55,7 +60,7 @@ window.addEventListener("keydown", (e) => {
       state.inputMode = null;
       state.inputBuffer = "";
       state.inputTargetId = null;
-      state.activeInteraction = null;
+      state.activeInteraction = resumeInteraction;
 
       return;
     }
@@ -94,7 +99,6 @@ window.addEventListener("keydown", (e) => {
   if (state.uiText && !state.isTyping && e.key === "Escape") {
     state.uiText = null;
     state.visibleText = "";
-    state.activeInteraction = null;
     state.inputMode = null;
     state.inputBuffer = "";
     state.inputTargetId = null;
@@ -180,6 +184,8 @@ let lastNPCTick = 0;
 const NPC_TICK_INTERVAL = 1000; // 1 second
 
 function loop(time: number) {
+  state.chatBubbles = pruneChatBubbles(state.chatBubbles, time);
+
   if (time - lastNPCTick > NPC_TICK_INTERVAL) {
     lastNPCTick = time;
 
@@ -196,6 +202,8 @@ function loop(time: number) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   renderScene(ctx, state.scene);
+
+  renderChatBubbles(ctx, state.scene, state.chatBubbles);
 
   const controlled = getControlled(state.scene);
 
@@ -264,6 +272,8 @@ async function init() {
   state = {
     scene,
     worldState: { flags: {} },
+
+    chatBubbles: [],
     uiText: null,
     visibleText: "",
     typingIndex: 0,
