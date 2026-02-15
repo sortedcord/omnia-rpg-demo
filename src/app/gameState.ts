@@ -20,10 +20,19 @@ export type ChatBubble = {
     ttlMs: number;
 };
 
+export type GameSettings = {
+    showDevHud: boolean;
+    npcTickMs: number;
+    chatBubbleTtlMs: number;
+    typeSpeedMs: number;
+};
+
 
 export type GameState = {
     scene: Scene;
     worldState: WorldState;
+
+    settings: GameSettings;
 
     chatBubbles: ChatBubble[];
 

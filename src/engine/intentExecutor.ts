@@ -57,7 +57,7 @@ export function executeIntentForEntity(
                     entityId: entity.id,
                     text: intent.text,
                     createdAt: now,
-                    ttlMs: 4000
+                    ttlMs: state.settings.chatBubbleTtlMs
                 });
             }
 

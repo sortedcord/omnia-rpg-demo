@@ -20,6 +20,13 @@ function makeState(): GameState {
             health: 100,
             inventory: []
         },
+
+        settings: {
+            showDevHud: true,
+            npcTickMs: 1000,
+            chatBubbleTtlMs: 4000,
+            typeSpeedMs: 30
+        },
         chatBubbles: [],
         uiText: null,
         visibleText: "",

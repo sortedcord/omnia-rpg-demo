@@ -9,7 +9,20 @@
 </head>
 
 <body>
-  <canvas id="game"></canvas>
+  <div id="gameRoot">
+    <canvas id="game"></canvas>
+
+    <div id="settingsOverlay" class="hidden" role="dialog" aria-modal="true" aria-label="Settings">
+      <div class="panel">
+        <div class="header">
+          <strong>Settings</strong>
+          <button id="closeSettings" type="button" aria-label="Close Settings">X</button>
+        </div>
+
+        <form id="settingsForm"></form>
+      </div>
+    </div>
+  </div>
   <script type="module" src="/src/app/main.ts"></script>
 </body>
 

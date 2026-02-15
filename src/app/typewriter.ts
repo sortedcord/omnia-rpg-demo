@@ -1,11 +1,11 @@
 import type { GameState } from "./gameState";
 
-const TYPE_SPEED = 30;
-
 export function updateTypewriter(state: GameState, time: number) {
     if (!state.isTyping || !state.uiText) return;
 
-    if (time - state.lastTypeTime >= TYPE_SPEED) {
+    const typeSpeed = state.settings.typeSpeedMs;
+
+    if (time - state.lastTypeTime >= typeSpeed) {
         state.visibleText += state.uiText[state.typingIndex];
         state.typingIndex++;
         state.lastTypeTime = time;

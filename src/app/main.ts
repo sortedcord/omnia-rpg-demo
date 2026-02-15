@@ -1,8 +1,10 @@
+import "./style.css";
+
 import { loadScene } from "../world/sceneLoader";
 import { findInteractable } from "../engine/interact";
 import { renderScene } from "../presentation/render";
 import { renderTextBar } from "../presentation/ui";
-import { renderInteractPrompt } from "../presentation/hud";
+import { renderInteractPrompt, renderSettingsPrompt } from "../presentation/hud";
 import { drawFacingOutline } from "../presentation/debugFacing";
 import { renderChoices } from "../presentation/choices";
 import { pruneChatBubbles, renderChatBubbles } from "../presentation/chatBubbles";
@@ -19,12 +21,43 @@ import {
 import { updateTypewriter } from "./typewriter";
 import { executeIntent, executeIntentForEntity } from "../engine/intentExecutor";
 import { generateIntentForNPC } from "../engine/fakeAI";
+import { loadSettings } from "./settings";
+import { mountSettingsDom } from "./settingsDom";
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
 const ctx = canvas.getContext("2d")!;
 
-canvas.width = 640;
-canvas.height = 480;
+// Design resolution. We render at this pixel size, then scale the whole game
+// uniformly to fit the viewport (no stretching).
+const DESIGN_WIDTH = 640;
+const DESIGN_HEIGHT = 480;
+
+canvas.width = DESIGN_WIDTH;
+canvas.height = DESIGN_HEIGHT;
+
+function updateViewportScale() {
+  const root = document.getElementById("gameRoot") as HTMLDivElement | null;
+  if (!root) return;
+
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+
+  const scale = Math.min(vw / DESIGN_WIDTH, vh / DESIGN_HEIGHT);
+
+  const scaledW = DESIGN_WIDTH * scale;
+  const scaledH = DESIGN_HEIGHT * scale;
+
+  const left = Math.max(0, (vw - scaledW) / 2);
+  const top = Math.max(0, (vh - scaledH) / 2);
+
+  // We scale the wrapper so all DOM UI positioned inside it stays aligned.
+  root.style.left = `${left}px`;
+  root.style.top = `${top}px`;
+  root.style.transform = `scale(${scale})`;
+}
+
+window.addEventListener("resize", updateViewportScale);
+updateViewportScale();
 
 let state: GameState;
 
@@ -182,12 +215,11 @@ window.addEventListener("keydown", (e) => {
 });
 
 let lastNPCTick = 0;
-const NPC_TICK_INTERVAL = 1000; // 1 second
 
 function loop(time: number) {
   state.chatBubbles = pruneChatBubbles(state.chatBubbles, time);
 
-  if (time - lastNPCTick > NPC_TICK_INTERVAL) {
+  if (time - lastNPCTick > state.settings.npcTickMs) {
     lastNPCTick = time;
 
     for (const obj of state.scene.objects) {
@@ -206,7 +238,9 @@ function loop(time: number) {
 
   renderChatBubbles(ctx, state.scene, state.chatBubbles);
 
-  renderDevHUD(ctx, state);
+  if (state.settings.showDevHud) {
+    renderDevHUD(ctx, state);
+  }
 
   const controlled = getControlled(state.scene);
 
@@ -240,6 +274,12 @@ function loop(time: number) {
           ? "Interact with NPC"
           : `Interact with ${obj.type}`
       );
+
+      // Render the settings hint directly beneath the interact prompt.
+      renderSettingsPrompt(ctx, 12 + 32 + 8);
+    } else {
+      // No interact prompt; keep settings hint at the top-right.
+      renderSettingsPrompt(ctx, 12);
     }
   }
 
@@ -272,6 +312,8 @@ function getControlled(scene: Scene) {
 async function init() {
   const scene: Scene = await loadScene("/scenes/classroom/classroom.json");
 
+  const settings = loadSettings();
+
   state = {
     scene,
     worldState: {
@@ -280,6 +322,8 @@ async function init() {
       health: 100,
       inventory: []
     },
+
+    settings,
 
     chatBubbles: [],
     uiText: null,
@@ -293,6 +337,10 @@ async function init() {
     inputTargetId: null,
     currentTargetId: null
   };
+
+  mountSettingsDom(settings, (next) => {
+    state.settings = next;
+  });
 
   requestAnimationFrame(loop);
 }
